@@ -1,6 +1,6 @@
 ﻿import hou
 
-filePath = hou.parm('/mat/null1/mat_path').eval()
+filePath = hou.parm('/mat/Texture_Import/mat_path').eval()
 materialName = filePath.split("/")[-2]
 print materialName
 matPath = '/mat/' + materialName
