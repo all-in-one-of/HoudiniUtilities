@@ -5,19 +5,7 @@ materialName = filePath.split("/")[-2]
 print materialName
 matPath = '/mat/' + materialName
 
-# Get texture suffixes
-diffuseSuffix = hou.parm('/mat/Texture_Import/diffuse_name').eval()
-roughSuffix = hou.parm('/mat/Texture_Import/rough_name').eval()
-metalSuffix = hou.parm('/mat/Texture_Import/metal_name').eval()
-normalSuffix = hou.parm('/mat/Texture_Import/normal_name').eval()
-
-# Find textures in folder
-diffuseTEX = filePath + materialName + diffuseSuffix
-
-roughTEX = filePath + materialName + roughSuffix
-metalTEX = filePath + materialName + metalSuffix
-normalTEX = filePath + materialName + normalSuffix
-
+# Check if vopnet exists
 if (hou.item(matPath) == None):
     print "Material Does Not Exist!"
     hou.node('/mat/').createNode('redshift_vopnet',materialName)
@@ -26,6 +14,34 @@ else:
 #        print child 
         child.destroy()
     hou.node(matPath).createNode('redshift_material','redshift_material1')
+
+normalTEX = ""
+    
+# Get texture suffixes
+if (hou.parm('/mat/Texture_Import/diffuse').eval()==1):
+    diffuseSuffix = hou.parm('/mat/Texture_Import/diffuse_name').eval()
+    diffuseTEX = filePath + materialName + diffuseSuffix
+else:
+    diffuseTEX = ""
+    
+if (hou.parm('/mat/Texture_Import/roughness').eval()==1):
+    roughSuffix = hou.parm('/mat/Texture_Import/rough_name').eval()
+    roughTEX = filePath + materialName + roughSuffix
+else:
+    roughTEX = ""
+
+if (hou.parm('/mat/Texture_Import/metalness').eval()==1):
+    metalSuffix = hou.parm('/mat/Texture_Import/metal_name').eval()
+    metalTEX = filePath + materialName + metalSuffix
+else:
+    metalTEX = ""
+    
+if (hou.parm('/mat/Texture_Import/normal').eval()==1):
+    normalSuffix = hou.parm('/mat/Texture_Import/normal_name').eval()
+    normalTEX = filePath + materialName + normalSuffix
+else:
+    normalTEX = ""
+    
 
 # Create material node
 hou.node(matPath).createNode('redshift::Material','RS_Material')
