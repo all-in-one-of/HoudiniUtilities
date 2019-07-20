@@ -1,15 +1,22 @@
 ﻿import hou
 
-filePath = hou.parm('/mat/Texture_Import/mat_path').eval()
+filePath = hou.parm('/mat/Texture_Import/mat_path').unexpandedString()
 materialName = filePath.split("/")[-2]
 print materialName
 matPath = '/mat/' + materialName
 
+# Get texture suffixes
+diffuseSuffix = hou.parm('/mat/Texture_Import/diffuse_name').eval()
+roughSuffix = hou.parm('/mat/Texture_Import/rough_name').eval()
+metalSuffix = hou.parm('/mat/Texture_Import/metal_name').eval()
+normalSuffix = hou.parm('/mat/Texture_Import/normal_name').eval()
+
 # Find textures in folder
-diffuseTEX = filePath + materialName + "_DIFF"
-roughTEX = filePath + materialName + "_ROUGH"
-metalTEX = filePath + materialName + "_METAL"
-normalTEX = filePath + materialName + "_NORMAL_OGL"
+diffuseTEX = filePath + materialName + diffuseSuffix
+
+roughTEX = filePath + materialName + roughSuffix
+metalTEX = filePath + materialName + metalSuffix
+normalTEX = filePath + materialName + normalSuffix
 
 if (hou.item(matPath) == None):
     print "Material Does Not Exist!"
