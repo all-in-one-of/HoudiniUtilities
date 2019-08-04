@@ -14,9 +14,8 @@ else:
 #        print child 
         child.destroy()
     hou.node(matPath).createNode('redshift_material','redshift_material1')
-
-normalTEX = ""
     
+
 # Get texture suffixes
 if (hou.parm('/mat/Texture_Import/diffuse').eval()==1):
     diffuseSuffix = hou.parm('/mat/Texture_Import/diffuse_name').eval()
@@ -42,6 +41,52 @@ if (hou.parm('/mat/Texture_Import/normal').eval()==1):
 else:
     normalTEX = ""
     
+aoTEX = ""
+bumpTEX = ""
+displacementTEX = ""
+
+
+# Create texture transform parameters
+hou.node(matPath).createNode('parameter','scale')
+hou.node(matPath +'/scale').parm('parmname').set('scale')
+hou.node(matPath +'/scale').parm('parmtype').set(5)
+hou.node(matPath +'/scale').parmTuple('float2def')[0].set(1)
+hou.node(matPath +'/scale').parmTuple('float2def')[1].set(1)
+
+hou.node(matPath).createNode('parameter','offset')
+hou.node(matPath +'/offset').parm('parmname').set('offset')
+hou.node(matPath +'/offset').parm('parmtype').set(5)
+
+hou.node(matPath).createNode('parameter','rotation')
+hou.node(matPath +'/rotation').parm('parmname').set('rotation')
+hou.node(matPath +'/rotation').parm('rangeflt2').set(360)
+
+# Create triplanar transform parameters
+hou.node(matPath).createNode('parameter','tri_scale')
+hou.node(matPath +'/tri_scale').parm('parmname').set('tri_scale')
+hou.node(matPath +'/tri_scale').parm('parmlabel').set('Tri Planar Scale')
+hou.node(matPath +'/tri_scale').parm('parmtype').set(6)
+hou.node(matPath +'/tri_scale').parm('float3def1').set(1)
+hou.node(matPath +'/tri_scale').parm('float3def2').set(1)
+hou.node(matPath +'/tri_scale').parm('float3def3').set(1)
+
+hou.node(matPath).createNode('parameter','tri_offset')
+hou.node(matPath +'/tri_offset').parm('parmname').set('tri_offset')
+hou.node(matPath +'/tri_offset').parm('parmlabel').set('Tri Planar Offset')
+hou.node(matPath +'/tri_offset').parm('parmtype').set(6)
+
+hou.node(matPath).createNode('parameter','tri_rotate')
+hou.node(matPath +'/tri_rotate').parm('parmname').set('tri_rotate')
+hou.node(matPath +'/tri_rotate').parm('parmlabel').set('Tri Planar Rotate')
+hou.node(matPath +'/tri_rotate').parm('parmtype').set(6)
+
+# Create triplanar switch
+if hou.node(matPath).parm('triPlanar') == None:
+	parm_group = hou.node(matPath).parmTemplateGroup()
+	parm_folder = hou.FolderParmTemplate('folder', 'Tri Planar')
+	parm_folder.addParmTemplate(hou.ToggleParmTemplate('triPlanar', 'Tri Planar', 0))
+	parm_group.append(parm_folder)
+	hou.node(matPath).setParmTemplateGroup(parm_group)
 
 # Create material node
 hou.node(matPath).createNode('redshift::Material','RS_Material')
@@ -50,15 +95,29 @@ hou.node(matPath +'/RS_Material').parm('refl_brdf').set('1')
 #Set fresnel type to metalness
 hou.node(matPath +'/RS_Material').parm('refl_fresnel_mode').set('2')
 
-#Create texture nodes
-hou.node(matPath).createNode('redshift::TextureSampler','diffuse')
-hou.node(matPath).createNode('redshift::TextureSampler','ao')
-hou.node(matPath).createNode('redshift::TextureSampler','roughness')
-hou.node(matPath).createNode('redshift::TextureSampler','metalness')
 
-hou.node(matPath).createNode('redshift::TextureSampler','normal')
-hou.node(matPath).createNode('redshift::TextureSampler','bump')
-hou.node(matPath).createNode('redshift::TextureSampler','displacement_tex')
+#Create texture nodes
+textureNodes = (
+	'diffuse',
+	'ao',
+	'roughness',
+	'metalness',
+	'normal',
+	'bump',
+	'displacement_tex'
+)
+
+for node in textureNodes:
+	hou.node(matPath).createNode('redshift::TextureSampler',node)
+
+# hou.node(matPath).createNode('redshift::TextureSampler','diffuse')
+# hou.node(matPath).createNode('redshift::TextureSampler','ao')
+# hou.node(matPath).createNode('redshift::TextureSampler','roughness')
+# hou.node(matPath).createNode('redshift::TextureSampler','metalness')
+
+# hou.node(matPath).createNode('redshift::TextureSampler','normal')
+# hou.node(matPath).createNode('redshift::TextureSampler','bump')
+# hou.node(matPath).createNode('redshift::TextureSampler','displacement_tex')
 
 #Create bump and displacement nodes
 hou.node(matPath).createNode('redshift::BumpMap','BumpMap_Normal')
@@ -68,27 +127,48 @@ hou.node(matPath).createNode('redshift::BumpMap','BumpMap_Bump')
 hou.node(matPath).createNode('redshift::BumpBlender','BumpBlender')
 hou.node(matPath).createNode('redshift::Displacement','Displacement')
 
+# Create triplanar networks
+for nodes in textureNodes:
+	hou.node(matPath).createNode('redshift::TriPlanar','TriPlanar_' + nodes)
+	hou.node(matPath).createNode('redshift::vopSwitch','vopSwitch_' + nodes)
+
+	hou.node(matPath +'/vopSwitch_' + nodes).setInput(0,hou.node(matPath + '/' + nodes))
+	hou.node(matPath +'/TriPlanar_' + nodes).setInput(0,hou.node(matPath + '/' + nodes))
+	hou.node(matPath +'/vopSwitch_' + nodes).setInput(1,hou.node(matPath + '/TriPlanar_' + nodes))
+
+	hou.node(matPath +'/vopSwitch_' + nodes).parm('RS_switch').setExpression('ch("' + matPath + '/' + 'triPlanar")')
+
 # Connect material nodes
 hou.node(matPath +'/redshift_material1').setInput(0,hou.node(matPath + '/RS_Material'))
 
+
 # Connect texture nodes
-hou.node(matPath +'/RS_Material').setInput(0,hou.node(matPath + '/diffuse'))
-hou.node(matPath +'/RS_Material').setInput(7,hou.node(matPath + '/roughness'))
-hou.node(matPath +'/RS_Material').setInput(14,hou.node(matPath + '/metalness'))
+hou.node(matPath +'/RS_Material').setInput(0,hou.node(matPath + '/vopSwitch_diffuse'))
+hou.node(matPath +'/RS_Material').setInput(7,hou.node(matPath + '/vopSwitch_roughness'))
+hou.node(matPath +'/RS_Material').setInput(14,hou.node(matPath + '/vopSwitch_metalness'))
+
 
 # Connect ao
-hou.node(matPath +'/diffuse').setInput(3,hou.node(matPath + '/ao'))
+hou.node(matPath +'/diffuse').setInput(3,hou.node(matPath + '/vopSwitch_ao'))
+
 
 # Connect bump nodes
-hou.node(matPath +'/BumpMap_Normal').setInput(0,hou.node(matPath + '/normal'))
-hou.node(matPath +'/BumpMap_Bump').setInput(0,hou.node(matPath + '/bump'))
+hou.node(matPath +'/BumpMap_Normal').setInput(0,hou.node(matPath + '/vopSwitch_normal'))
+hou.node(matPath +'/BumpMap_Bump').setInput(0,hou.node(matPath + '/vopSwitch_bump'))
 hou.node(matPath +'/BumpBlender').setInput(0,hou.node(matPath + '/BumpMap_Normal'))
 hou.node(matPath +'/BumpBlender').setInput(1,hou.node(matPath + '/BumpMap_Bump'))
 hou.node(matPath +'/RS_Material').setInput(49,hou.node(matPath + '/BumpBlender'))
 
+
 # Connect displacement nodes
 hou.node(matPath +'/redshift_material1').setInput(1,hou.node(matPath + '/Displacement'))
-hou.node(matPath +'/Displacement').setInput(0,hou.node(matPath + '/displacement_tex'))
+hou.node(matPath +'/Displacement').setInput(0,hou.node(matPath + '/vopSwitch_displacement_tex'))
+
+# Connect parms
+for node in textureNodes:
+	hou.node(matPath + '/' + node).setInput(0,hou.node(matPath + '/scale'))
+	hou.node(matPath + '/' +node).setInput(1,hou.node(matPath + '/offset'))
+	hou.node(matPath + '/' +node).setInput(2,hou.node(matPath + '/rotation'))
 
 
 # Assign textures and set gamma
@@ -104,5 +184,14 @@ hou.node(matPath +'/roughness').parm('tex0_gammaoverride').set(1)
 
 hou.node(matPath +'/normal').parm('tex0').set(normalTEX)
 hou.node(matPath +'/normal').parm('tex0_gammaoverride').set(1)
+
+hou.node(matPath +'/bump').parm('tex0').set(bumpTEX)
+hou.node(matPath +'/bump').parm('tex0_gammaoverride').set(1)
+
+hou.node(matPath +'/ao').parm('tex0').set(aoTEX)
+hou.node(matPath +'/ao').parm('tex0_gammaoverride').set(1)
+
+hou.node(matPath +'/displacement_tex').parm('tex0').set(displacementTEX)
+hou.node(matPath +'/displacement_tex').parm('tex0_gammaoverride').set(1)
 
 hou.node(matPath).layoutChildren()
