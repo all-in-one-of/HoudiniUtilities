@@ -59,6 +59,12 @@ if (hou.parm('/mat/Texture_Import/displacement').eval()==1):
 else:
     displacementTEX = ""
 
+# Check if using glossiness
+roughness_invert = hou.parm('/mat/Texture_Import/roughness_invert').eval()
+
+# Check if using triplanar
+triplanar_check = hou.parm('/mat/Texture_Import/triplanar_check').eval()
+
 # Create texture transform parameters
 hou.node(matPath).createNode('parameter','scale')
 hou.node(matPath +'/scale').parm('parmname').set('scale')
@@ -157,8 +163,14 @@ hou.node(matPath +'/redshift_material1').setInput(0,hou.node(matPath + '/RS_Mate
 
 # Connect texture nodes
 hou.node(matPath +'/RS_Material').setInput(0,hou.node(matPath + '/vopSwitch_diffuse'))
-hou.node(matPath +'/RS_Material').setInput(7,hou.node(matPath + '/vopSwitch_roughness'))
 hou.node(matPath +'/RS_Material').setInput(14,hou.node(matPath + '/vopSwitch_metalness'))
+
+if roughness_invert:
+	hou.node(matPath).createNode('redshift::RSMathInvColor','RSMathInvColor_roughness')
+	hou.node(matPath +'/RSMathInvColor_roughness').setInput(0,hou.node(matPath + '/vopSwitch_roughness'))
+	hou.node(matPath +'/RS_Material').setInput(7,hou.node(matPath + '/RSMathInvColor_roughness'))
+else:
+	hou.node(matPath +'/RS_Material').setInput(7,hou.node(matPath + '/vopSwitch_roughness'))
 
 
 # Connect ao
