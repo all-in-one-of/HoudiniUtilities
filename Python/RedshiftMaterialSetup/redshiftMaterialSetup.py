@@ -41,10 +41,23 @@ if (hou.parm('/mat/Texture_Import/normal').eval()==1):
 else:
     normalTEX = ""
     
-aoTEX = ""
-bumpTEX = ""
-displacementTEX = ""
+if (hou.parm('/mat/Texture_Import/ao').eval()==1):
+    aoSuffix = hou.parm('/mat/Texture_Import/ao_name').eval()
+    aoTEX = filePath + materialName + aoSuffix
+else:
+    aoTEX = ""
 
+if (hou.parm('/mat/Texture_Import/bump').eval()==1):
+    bumpSuffix = hou.parm('/mat/Texture_Import/bump_name').eval()
+    bumpTEX = filePath + materialName + bumpSuffix
+else:
+    bumpTEX = ""
+
+if (hou.parm('/mat/Texture_Import/displacement').eval()==1):
+    displacementSuffix = hou.parm('/mat/Texture_Import/displacement_name').eval()
+    displacementTEX = filePath + materialName + displacementSuffix
+else:
+    displacementTEX = ""
 
 # Create texture transform parameters
 hou.node(matPath).createNode('parameter','scale')
@@ -75,10 +88,10 @@ hou.node(matPath +'/tri_offset').parm('parmname').set('tri_offset')
 hou.node(matPath +'/tri_offset').parm('parmlabel').set('Tri Planar Offset')
 hou.node(matPath +'/tri_offset').parm('parmtype').set(6)
 
-hou.node(matPath).createNode('parameter','tri_rotate')
-hou.node(matPath +'/tri_rotate').parm('parmname').set('tri_rotate')
-hou.node(matPath +'/tri_rotate').parm('parmlabel').set('Tri Planar Rotate')
-hou.node(matPath +'/tri_rotate').parm('parmtype').set(6)
+hou.node(matPath).createNode('parameter','tri_rotation')
+hou.node(matPath +'/tri_rotation').parm('parmname').set('tri_rotation')
+hou.node(matPath +'/tri_rotation').parm('parmlabel').set('Tri Planar Rotation')
+hou.node(matPath +'/tri_rotation').parm('parmtype').set(6)
 
 # Create triplanar switch
 if hou.node(matPath).parm('triPlanar') == None:
@@ -167,11 +180,16 @@ hou.node(matPath +'/Displacement').setInput(0,hou.node(matPath + '/vopSwitch_dis
 # Connect parms
 for node in textureNodes:
 	hou.node(matPath + '/' + node).setInput(0,hou.node(matPath + '/scale'))
-	hou.node(matPath + '/' +node).setInput(1,hou.node(matPath + '/offset'))
-	hou.node(matPath + '/' +node).setInput(2,hou.node(matPath + '/rotation'))
+	hou.node(matPath + '/' + node).setInput(1,hou.node(matPath + '/offset'))
+	hou.node(matPath + '/' + node).setInput(2,hou.node(matPath + '/rotation'))
 
+# Connect tri planar parms
+for node in textureNodes:
+	hou.node(matPath + '/TriPlanar_' + node).setInput(4,hou.node(matPath + '/tri_scale'))
+	hou.node(matPath + '/TriPlanar_' + node).setInput(5,hou.node(matPath + '/tri_offset'))
+	hou.node(matPath + '/TriPlanar_' + node).setInput(6,hou.node(matPath + '/tri_rotation'))
 
-# Assign textures and set gamma
+# Assign textures and set gamma (can be done with loop)
 hou.node(matPath +'/diffuse').parm('tex0').set(diffuseTEX)
 hou.node(matPath +'/diffuse').parm('tex0_gammaoverride').set(1)
 hou.node(matPath +'/diffuse').parm('tex0_srgb').set(1)
