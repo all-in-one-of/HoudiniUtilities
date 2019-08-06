@@ -62,42 +62,17 @@ else:
 # Check if using glossiness
 roughness_invert = hou.parm('/mat/Texture_Import/roughness_invert').eval()
 
+# Check if create texure parameters is checked
+parameters_check = hou.parm('/mat/Texture_Import/texture_parameters').eval()
+
 # Check if using triplanar
 triplanar_check = hou.parm('/mat/Texture_Import/triplanar_check').eval()
 
-# Create texture transform parameters
-hou.node(matPath).createNode('parameter','scale')
-hou.node(matPath +'/scale').parm('parmname').set('scale')
-hou.node(matPath +'/scale').parm('parmtype').set(5)
-hou.node(matPath +'/scale').parmTuple('float2def')[0].set(1)
-hou.node(matPath +'/scale').parmTuple('float2def')[1].set(1)
-
-hou.node(matPath).createNode('parameter','offset')
-hou.node(matPath +'/offset').parm('parmname').set('offset')
-hou.node(matPath +'/offset').parm('parmtype').set(5)
-
-hou.node(matPath).createNode('parameter','rotation')
-hou.node(matPath +'/rotation').parm('parmname').set('rotation')
-hou.node(matPath +'/rotation').parm('rangeflt2').set(360)
-
-# Create triplanar transform parameters
-hou.node(matPath).createNode('parameter','tri_scale')
-hou.node(matPath +'/tri_scale').parm('parmname').set('tri_scale')
-hou.node(matPath +'/tri_scale').parm('parmlabel').set('Tri Planar Scale')
-hou.node(matPath +'/tri_scale').parm('parmtype').set(6)
-hou.node(matPath +'/tri_scale').parm('float3def1').set(1)
-hou.node(matPath +'/tri_scale').parm('float3def2').set(1)
-hou.node(matPath +'/tri_scale').parm('float3def3').set(1)
-
-hou.node(matPath).createNode('parameter','tri_offset')
-hou.node(matPath +'/tri_offset').parm('parmname').set('tri_offset')
-hou.node(matPath +'/tri_offset').parm('parmlabel').set('Tri Planar Offset')
-hou.node(matPath +'/tri_offset').parm('parmtype').set(6)
-
-hou.node(matPath).createNode('parameter','tri_rotation')
-hou.node(matPath +'/tri_rotation').parm('parmname').set('tri_rotation')
-hou.node(matPath +'/tri_rotation').parm('parmlabel').set('Tri Planar Rotation')
-hou.node(matPath +'/tri_rotation').parm('parmtype').set(6)
+# Check if create triplanar parameters is checked
+if triplanar_check:
+	triplanar_parameters_check = hou.parm('/mat/Texture_Import/triplanar_parameters').eval()
+else:
+	triplanar_parameters_check = 0
 
 # Create triplanar switch
 if hou.node(matPath).parm('triPlanar') == None:
@@ -189,17 +164,53 @@ hou.node(matPath +'/RS_Material').setInput(49,hou.node(matPath + '/BumpBlender')
 hou.node(matPath +'/redshift_material1').setInput(1,hou.node(matPath + '/Displacement'))
 hou.node(matPath +'/Displacement').setInput(0,hou.node(matPath + '/vopSwitch_displacement_tex'))
 
-# Connect parms
-for node in textureNodes:
-	hou.node(matPath + '/' + node).setInput(0,hou.node(matPath + '/scale'))
-	hou.node(matPath + '/' + node).setInput(1,hou.node(matPath + '/offset'))
-	hou.node(matPath + '/' + node).setInput(2,hou.node(matPath + '/rotation'))
+# Create and connect
+if parameters_check:
+	# Create texture transform parameters
+	hou.node(matPath).createNode('parameter','scale')
+	hou.node(matPath +'/scale').parm('parmname').set('scale')
+	hou.node(matPath +'/scale').parm('parmtype').set(5)
+	hou.node(matPath +'/scale').parmTuple('float2def')[0].set(1)
+	hou.node(matPath +'/scale').parmTuple('float2def')[1].set(1)
+
+	hou.node(matPath).createNode('parameter','offset')
+	hou.node(matPath +'/offset').parm('parmname').set('offset')
+	hou.node(matPath +'/offset').parm('parmtype').set(5)
+
+	hou.node(matPath).createNode('parameter','rotation')
+	hou.node(matPath +'/rotation').parm('parmname').set('rotation')
+	hou.node(matPath +'/rotation').parm('rangeflt2').set(360)
+
+	for node in textureNodes:
+		hou.node(matPath + '/' + node).setInput(0,hou.node(matPath + '/scale'))
+		hou.node(matPath + '/' + node).setInput(1,hou.node(matPath + '/offset'))
+		hou.node(matPath + '/' + node).setInput(2,hou.node(matPath + '/rotation'))
 
 # Connect tri planar parms
-for node in textureNodes:
-	hou.node(matPath + '/TriPlanar_' + node).setInput(4,hou.node(matPath + '/tri_scale'))
-	hou.node(matPath + '/TriPlanar_' + node).setInput(5,hou.node(matPath + '/tri_offset'))
-	hou.node(matPath + '/TriPlanar_' + node).setInput(6,hou.node(matPath + '/tri_rotation'))
+if triplanar_parameters_check:
+	# Create triplanar transform parameters
+	hou.node(matPath).createNode('parameter','tri_scale')
+	hou.node(matPath +'/tri_scale').parm('parmname').set('tri_scale')
+	hou.node(matPath +'/tri_scale').parm('parmlabel').set('Tri Planar Scale')
+	hou.node(matPath +'/tri_scale').parm('parmtype').set(6)
+	hou.node(matPath +'/tri_scale').parm('float3def1').set(1)
+	hou.node(matPath +'/tri_scale').parm('float3def2').set(1)
+	hou.node(matPath +'/tri_scale').parm('float3def3').set(1)
+
+	hou.node(matPath).createNode('parameter','tri_offset')
+	hou.node(matPath +'/tri_offset').parm('parmname').set('tri_offset')
+	hou.node(matPath +'/tri_offset').parm('parmlabel').set('Tri Planar Offset')
+	hou.node(matPath +'/tri_offset').parm('parmtype').set(6)
+
+	hou.node(matPath).createNode('parameter','tri_rotation')
+	hou.node(matPath +'/tri_rotation').parm('parmname').set('tri_rotation')
+	hou.node(matPath +'/tri_rotation').parm('parmlabel').set('Tri Planar Rotation')
+	hou.node(matPath +'/tri_rotation').parm('parmtype').set(6)
+
+	for node in textureNodes:
+		hou.node(matPath + '/TriPlanar_' + node).setInput(4,hou.node(matPath + '/tri_scale'))
+		hou.node(matPath + '/TriPlanar_' + node).setInput(5,hou.node(matPath + '/tri_offset'))
+		hou.node(matPath + '/TriPlanar_' + node).setInput(6,hou.node(matPath + '/tri_rotation'))
 
 # Assign textures and set gamma (can be done with loop)
 hou.node(matPath +'/diffuse').parm('tex0').set(diffuseTEX)
